@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>训练记录</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --line:#e6e9ee; --ink:#1f2a37;
+    --sub:#6b7686; --accent:#2f6fed; --accent-soft:#eaf1fe;
+    --up:#1a9e5f; --down:#d24a4a; --warn-bg:#fff8e6; --warn-ink:#8a6d1f;
+    --radius:14px; --shadow:0 1px 3px rgba(20,30,50,.06),0 6px 24px rgba(20,30,50,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5;padding-bottom:90px}
+  .wrap{max-width:680px;margin:0 auto;padding:18px 16px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  header h1{font-size:20px;font-weight:700;letter-spacing:-.3px}
+  header h1 span{color:var(--accent)}
+  .io{display:flex;gap:8px}
+  .io button{font-size:13px;padding:7px 12px;border:1px solid var(--line);background:var(--card);
+    border-radius:9px;color:var(--sub);cursor:pointer;font-weight:600}
+  .io button:active{transform:scale(.96)}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  label.fld{flex:1;min-width:130px;display:flex;flex-direction:column;gap:5px}
+  label.fld .lbl{font-size:12px;color:var(--sub);font-weight:600}
+  input[type=date],select{width:100%;padding:10px 11px;border:1px solid var(--line);
+    border-radius:10px;background:var(--card);font-size:15px;color:var(--ink);font-family:inherit}
+  select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7686' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;padding-right:30px}
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+  .ex{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .ex:last-child{border-bottom:none}
+  .ex .info{flex:1;min-width:0}
+  .ex .nm{font-size:15px;font-weight:600}
+  .ex .meta{font-size:12px;color:var(--sub);margin-top:2px}
+  .ex .last{font-size:12px;color:var(--sub);white-space:nowrap;text-align:right;min-width:62px}
+  .ex .last b{display:block;font-size:14px;color:var(--ink)}
+  .ex .wt{width:74px}
+  .ex .wt input{width:100%;text-align:center;padding:9px 6px;font-size:16px;font-weight:600;
+    border:1px solid var(--line);border-radius:10px;font-family:inherit}
+  .delta{font-size:11px;font-weight:700;margin-top:3px;text-align:center}
+  .delta.up{color:var(--up)} .delta.down{color:var(--down)} .delta.flat{color:var(--sub)}
+
+  .savebar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);
+    padding:12px 16px;display:flex;gap:10px;justify-content:center;z-index:20}
+  .savebar .inner{max-width:680px;width:100%;display:flex;gap:10px}
+  .btn{flex:1;padding:13px;border:none;border-radius:11px;font-size:15px;font-weight:700;cursor:pointer}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:active{background:#235ed1}
+  .btn-ghost{background:var(--accent-soft);color:var(--accent);flex:0 0 auto;padding:13px 16px}
+
+  .tabs{display:flex;gap:6px;margin-bottom:14px;background:var(--card);padding:5px;border-radius:12px;
+    border:1px solid var(--line)}
+  .tabs button{flex:1;padding:9px;border:none;background:none;border-radius:9px;font-size:14px;
+    font-weight:600;color:var(--sub);cursor:pointer}
+  .tabs button.on{background:var(--accent);color:#fff}
+
+  .sec-title{font-size:13px;color:var(--sub);font-weight:700;margin:2px 0 10px;text-transform:none}
+
+  .hist-day{margin-bottom:12px}
+  .hist-day .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .hist-day .hd .d{font-weight:700;font-size:15px}
+  .hist-day .hd .p{font-size:12px;background:var(--accent-soft);color:var(--accent);
+    padding:3px 9px;border-radius:20px;font-weight:700}
+  .hist-day .items{font-size:13px;color:var(--sub)}
+  .hist-day .items span{display:inline-block;margin:2px 10px 2px 0}
+  .hist-day .items span b{color:var(--ink)}
+  .hist-day .del{font-size:11px;color:var(--down);cursor:pointer;background:none;border:none;font-weight:600}
+
+  .empty{text-align:center;color:var(--sub);padding:30px 10px;font-size:14px}
+  .note{background:var(--warn-bg);color:var(--warn-ink);font-size:12px;padding:10px 12px;
+    border-radius:10px;margin-top:10px;line-height:1.5}
+  .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:11px 20px;border-radius:30px;font-size:14px;font-weight:600;
+    opacity:0;transition:.25s;z-index:50;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hide{display:none!important}
+  canvas{margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>训练<span>记录</span></h1>
+    <div class="io">
+      <button id="btnExport">导出</button>
+      <button id="btnImport">导入</button>
+      <input type="file" id="fileImport" accept=".json" class="hide">
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="on" data-tab="record">记录</button>
+    <button data-tab="history">历史</button>
+    <button data-tab="chart">进步图</button>
+  </div>
+
+  <!-- 记录 -->
+  <section id="tab-record">
+    <div class="card">
+      <div class="row">
+        <label class="fld"><span class="lbl">日期</span><input type="date" id="date"></label>
+        <label class="fld"><span class="lbl">今天练</span>
+          <select id="part">
+            <option value="胸">胸</option>
+            <option value="背">背</option>
+            <option value="腿">腿</option>
+            <option value="肩">肩</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sec-title" id="exHint">填入今天的重量(kg),旁边显示上次重量</div>
+      <div id="exList"></div>
+      <div class="note" id="partNote"></div>
+    </div>
+  </section>
+
+  <!-- 历史 -->
+  <section id="tab-history" class="hide">
+    <div class="card" id="histBox"></div>
+  </section>
+
+  <!-- 进步图 -->
+  <section id="tab-chart" class="hide">
+    <div class="card">
+      <label class="fld"><span class="lbl">选择动作</span>
+        <select id="chartEx"></select>
+      </label>
+      <canvas id="chart" height="220"></canvas>
+      <div class="empty hide" id="chartEmpty">该动作还没有记录</div>
+    </div>
+  </section>
+</div>
+
+<div class="savebar" id="saveBar">
+  <div class="inner">
+    <button class="btn btn-primary" id="btnSave">保存今天的训练</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PLAN = {
+  "胸":{note:"实力推主要练前束+三头。",ex:[
+    {n:"蝴蝶机夹胸",s:"4×12"},{n:"杠铃卧推",s:"4×10"},
+    {n:"上斜卧推",s:"3×10-12"},{n:"杠铃实力推",s:"3×10-12"},{n:"绳索下压",s:"3×10"}]},
+  "背":{note:"单侧划船左右各做。引体放最后力竭收尾。",ex:[
+    {n:"高位下拉",s:"3-4×15"},{n:"单侧水平划船",s:"3组(左右各)"},
+    {n:"窄握坐姿划船",s:"3×12-15"},{n:"直臂下压",s:"3×12-15"},
+    {n:"辅助引体向上",s:"1-2组"},{n:"哑铃弯举",s:"4×10"}]},
+  "腿":{note:"功能性导向,后撤步躯干直立练股四头。",ex:[
+    {n:"髋伸位大腿内收机",s:"4×15"},{n:"罗马尼亚硬拉",s:"3×12"},
+    {n:"后撤式弓步蹲",s:"3×10"},{n:"单腿持重转体",s:"3×10"},{n:"坐姿提踵",s:"3×15"}]},
+  "肩":{note:"实力推胸日肩日都做,前束容量偏高,留意别过度。",ex:[
+    {n:"坐姿反向飞鸟",s:"4×12-15"},{n:"实力推",s:"5×8-10"},
+    {n:"坐姿推肩",s:"4×10-15"},{n:"绳索Y举",s:"4×10-12"},
+    {n:"三头下压+二头弯举 超级组",s:"4×10-12"}]}
+};
+const KEY="train_log_v1";
+const $=s=>document.querySelector(s);
+const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}};
+const save=d=>localStorage.setItem(KEY,JSON.stringify(d));
+let DATA=load();
+
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1800)}
+
+// 找某动作上一次(早于当前所选日期)的重量
+function lastWeight(exName,beforeDate){
+  const recs=DATA.filter(r=>r.date<beforeDate && r.weights[exName]!=null)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  return recs.length?{w:recs[0].weights[exName],date:recs[0].date}:null;
+}
+
+function renderExercises(){
+  const part=$("#part").value, date=$("#date").value;
+  const cfg=PLAN[part];
+  $("#partNote").textContent="💡 "+cfg.note;
+  // 当天若已有记录,预填
+  const today=DATA.find(r=>r.date===date && r.part===part);
+  const box=$("#exList"); box.innerHTML="";
+  cfg.ex.forEach(e=>{
+    const last=lastWeight(e.n,date);
+    const prefill=today && today.weights[e.n]!=null ? today.weights[e.n] : "";
+    const div=document.createElement("div");
+    div.className="ex";
+    div.innerHTML=`
+      <div class="info"><div class="nm">${e.n}</div><div class="meta">${e.s}</div></div>
+      <div class="last">上次<b>${last?last.w+"kg":"—"}</b></div>
+      <div class="wt">
+        <input type="number" inputmode="decimal" step="0.5" placeholder="kg"
+          value="${prefill}" data-ex="${e.n}" data-last="${last?last.w:""}">
+        <div class="delta flat" data-delta="${e.n}"></div>
+      </div>`;
+    box.appendChild(div);
+  });
+  box.querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("input",()=>updateDelta(inp));
+    updateDelta(inp);
+  });
+}
+function updateDelta(inp){
+  const d=$(`[data-delta="${inp.dataset.ex}"]`);
+  const last=parseFloat(inp.dataset.last), cur=parseFloat(inp.value);
+  if(isNaN(cur)||isNaN(last)){d.textContent="";d.className="delta flat";return;}
+  const diff=+(cur-last).toFixed(1);
+  if(diff>0){d.textContent="↑"+diff;d.className="delta up";}
+  else if(diff<0){d.textContent="↓"+Math.abs(diff);d.className="delta down";}
+  else{d.textContent="=";d.className="delta flat";}
+}
+
+function saveToday(){
+  const part=$("#part").value, date=$("#date").value;
+  if(!date){toast("请选日期");return;}
+  const weights={};
+  document.querySelectorAll("#exList input").forEach(i=>{
+    const v=parseFloat(i.value); if(!isNaN(v)) weights[i.dataset.ex]=v;
+  });
+  if(Object.keys(weights).length===0){toast("还没填重量");return;}
+  DATA=DATA.filter(r=>!(r.date===date && r.part===part));
+  DATA.push({date,part,weights});
+  DATA.sort((a,b)=>b.date.localeCompare(a.date));
+  save(DATA); toast("已保存 ✓"); renderExercises();
+}
+
+function renderHistory(){
+  const box=$("#histBox");
+  if(DATA.length===0){box.innerHTML='<div class="empty">还没有训练记录<br>去「记录」填写第一次吧</div>';return;}
+  box.innerHTML="";
+  DATA.forEach((r,idx)=>{
+    const items=Object.entries(r.weights).map(([k,v])=>`<span>${k} <b>${v}kg</b></span>`).join("");
+    const div=document.createElement("div");
+    div.className="hist-day";
+    div.innerHTML=`<div class="hd"><span class="d">${fmtDate(r.date)}</span>
+      <span class="p">${r.part}</span></div>
+      <div class="items">${items}</div>
+      <button class="del" data-i="${idx}">删除这天</button>`;
+    box.appendChild(div);
+  });
+  box.querySelectorAll(".del").forEach(b=>b.addEventListener("click",()=>{
+    if(confirm("确定删除这条记录?")){DATA.splice(+b.dataset.i,1);save(DATA);renderHistory();}
+  }));
+}
+function fmtDate(s){const d=new Date(s+"T00:00");const w=["日","一","二","三","四","五","六"];
+  return `${d.getMonth()+1}月${d.getDate()}日 周${w[d.getDay()]}`;}
+
+let chart;
+function renderChart(){
+  const sel=$("#chartEx");
+  const allEx=[...new Set(Object.values(PLAN).flatMap(p=>p.ex.map(e=>e.n)))];
+  if(sel.options.length===0){allEx.forEach(n=>{const o=document.createElement("option");
+    o.value=o.textContent=n;sel.appendChild(o);});}
+  const ex=sel.value;
+  const pts=DATA.filter(r=>r.weights[ex]!=null).map(r=>({x:r.date,y:r.weights[ex]}))
+    .sort((a,b)=>a.x.localeCompare(b.x));
+  $("#chartEmpty").classList.toggle("hide",pts.length>0);
+  $("#chart").classList.toggle("hide",pts.length===0);
+  if(chart)chart.destroy();
+  if(pts.length===0)return;
+  chart=new Chart($("#chart"),{type:"line",
+    data:{labels:pts.map(p=>fmtShort(p.x)),
+      datasets:[{label:ex+" (kg)",data:pts.map(p=>p.y),
+        borderColor:"#2f6fed",backgroundColor:"rgba(47,111,237,.1)",
+        fill:true,tension:.3,pointRadius:4,pointBackgroundColor:"#2f6fed"}]},
+    options:{plugins:{legend:{display:true,labels:{font:{size:13}}}},
+      scales:{y:{beginAtZero:false,ticks:{callback:v=>v+"kg"}}}}});
+}
+function fmtShort(s){const d=new Date(s+"T00:00");return `${d.getMonth()+1}/${d.getDate()}`;}
+
+// 导出 / 导入
+$("#btnExport").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="训练记录_"+new Date().toISOString().slice(0,10)+".json";a.click();
+  toast("已导出备份文件");
+});
+$("#btnImport").addEventListener("click",()=>$("#fileImport").click());
+$("#fileImport").addEventListener("change",e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{try{const d=JSON.parse(rd.result);
+    if(!Array.isArray(d))throw 0;
+    if(confirm("导入将合并到现有记录(同日期同部位会被覆盖),继续?")){
+      const map={};[...DATA,...d].forEach(r=>map[r.date+"_"+r.part]=r);
+      DATA=Object.values(map).sort((a,b)=>b.date.localeCompare(a.date));
+      save(DATA);refreshAll();toast("导入成功 ✓");}
+  }catch(err){toast("文件格式不对");}};
+  rd.readAsText(f);e.target.value="";
+});
+
+// tabs
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");
+  const t=b.dataset.tab;
+  $("#tab-record").classList.toggle("hide",t!=="record");
+  $("#tab-history").classList.toggle("hide",t!=="history");
+  $("#tab-chart").classList.toggle("hide",t!=="chart");
+  $("#saveBar").classList.toggle("hide",t!=="record");
+  if(t==="history")renderHistory();
+  if(t==="chart")renderChart();
+}));
+
+$("#part").addEventListener("change",renderExercises);
+$("#date").addEventListener("change",renderExercises);
+$("#btnSave").addEventListener("click",saveToday);
+$("#chartEx").addEventListener("change",renderChart);
+
+function refreshAll(){renderExercises();}
+// init
+$("#date").value=new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD 本地
+renderExercises();
+</script>
+</body>
+</html>
